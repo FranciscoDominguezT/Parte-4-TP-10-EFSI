@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
     const fetchEvents = async () => {
       try {
         const response = await fetch('http://localhost:3001/api/event');
@@ -24,11 +31,11 @@ export default function Home() {
     };
 
     fetchEvents();
-  }, []);
+  }, [isAuthenticated, router]);
 
-  const handleEventClick = (eventId) => {
-    router.push(`/evento/${eventId}`);
-  };
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -44,9 +51,16 @@ export default function Home() {
               <h2 className="event-title">{event.name}</h2>
             </div>
             <div className="event-content">
-              <p className="text-sm text-gray-600 mb-2">{new Date(event.start_date).toLocaleString()}</p>
+              <p className="text-sm text-gray-600 mb-2">
+                {new Date(event.start_date).toLocaleString()}
+              </p>
               <p className="mb-4">{event.description.substring(0, 100)}...</p>
-              <button className="event-button" onClick={() => handleEventClick(event.id)}>Ver detalles</button>
+              <button 
+                className="event-button" 
+                onClick={() => router.push(`/evento/${event.id}`)}
+              >
+                Ver detalles
+              </button>
             </div>
           </div>
         ))}

@@ -24,7 +24,7 @@ export default function Login() {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          login(data.token);
+          await login(data.token, data.user);
           router.push('/');
         } else {
           alert(data.message || 'Error durante el login');

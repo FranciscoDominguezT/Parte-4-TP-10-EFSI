@@ -11,14 +11,44 @@ export const AuthProvider = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const token = Cookies.get('token');
-    console.log('Token encontrado:', token);
+    const checkAuth = async () => {
+      const token = Cookies.get('token');
+      console.log('Token encontrado:', token);
 
-    if (token) {
-      validateToken(token);
-    } else {
-      setLoading(false);
-    }
+      if (!token) {
+        setLoading(false);
+        if (!router.pathname.startsWith('/login') && !router.pathname.startsWith('/register')) {
+          router.push('/login');
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3001/api/user/validate-token', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        console.log('Respuesta de validación:', response);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Usuario autenticado:', data.user);
+          setUser(data.user);
+          setIsAuthenticated(true);
+        } else {
+          await logout();
+        }
+      } catch (error) {
+        console.error('Error validating token:', error);
+        await logout();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const validateToken = async (token) => {
